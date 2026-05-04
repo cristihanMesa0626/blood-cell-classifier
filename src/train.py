@@ -165,7 +165,7 @@ workspace_dir = Path(__file__).parent.parent
 mlruns_dir = workspace_dir / "mlruns"
 mlruns_dir.mkdir(exist_ok=True)
 
-tracking_uri = str(mlruns_dir).replace("\\", "/")
+tracking_uri = "file://" + str(mlruns_dir.resolve()).replace("\\", "/")
 if not tracking_uri.startswith("/"):
     tracking_uri = "/" + tracking_uri
 tracking_uri = "file://" + tracking_uri
