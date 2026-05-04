@@ -197,10 +197,13 @@ with mlflow.start_run(experiment_id=experiment_id,
     mlflow.log_metric("test_samples", X_test.shape[0])
 
     # Guardar modelo SIN signature ni input_example (evita el error)
+    signature = mlflow.models.infer_signature(X_train[:5], model.predict(X_train[:5]))
     mlflow.sklearn.log_model(
-        sk_model=model,
-        artifact_path="model"
-    )
+    sk_model=model,
+    artifact_path="model",
+    signature=signature,
+    input_example=X_train[:3]
+)
 
     # Guardar modelo localmente
     workspace_dir = Path(__file__).parent.parent
