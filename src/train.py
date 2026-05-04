@@ -155,7 +155,6 @@ print(f"   F1 Score (weighted): {f1:.4f}")
 print(f"   F1 Score (macro):    {f1_macro:.4f}")
 print("\n📋 Reporte detallado:")
 print(classification_report(y_test, y_pred, target_names=le.classes_))
-
 # ============================================
 # 7. REGISTRAR EN MLFLOW
 # ============================================
@@ -165,12 +164,12 @@ workspace_dir = Path(__file__).parent.parent
 mlruns_dir = workspace_dir / "mlruns"
 mlruns_dir.mkdir(exist_ok=True)
 
-tracking_uri = "file://" + str(mlruns_dir.resolve()).replace("\\", "/")
-if not tracking_uri.startswith("/"):
-    tracking_uri = "/" + tracking_uri
-tracking_uri = "file://" + tracking_uri
+# Construir tracking URI compatible con cualquier SO
+mlruns_abs = str(mlruns_dir.resolve())
+tracking_uri = "file://" + mlruns_abs
 
 mlflow.set_tracking_uri(tracking_uri)
+print(f"   Tracking URI: {tracking_uri}")
 
 experiment_name = config['mlflow']['experiment_name']
 try:
