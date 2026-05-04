@@ -155,21 +155,15 @@ print(f"   F1 Score (weighted): {f1:.4f}")
 print(f"   F1 Score (macro):    {f1_macro:.4f}")
 print("\n📋 Reporte detallado:")
 print(classification_report(y_test, y_pred, target_names=le.classes_))
+
+
 # ============================================
 # 7. REGISTRAR EN MLFLOW
 # ============================================
 print("\n📝 Registrando en MLflow...")
 
-workspace_dir = Path(__file__).parent.parent
-mlruns_dir = workspace_dir / "mlruns"
-mlruns_dir.mkdir(exist_ok=True)
-
-# Construir tracking URI compatible con cualquier SO
-mlruns_abs = str(mlruns_dir.resolve())
-tracking_uri = "file://" + mlruns_abs
-
-mlflow.set_tracking_uri(tracking_uri)
-print(f"   Tracking URI: {tracking_uri}")
+# Usar ruta relativa simple - compatible con Windows y Linux
+mlflow.set_tracking_uri("file:./mlruns")
 
 experiment_name = config['mlflow']['experiment_name']
 try:
@@ -204,6 +198,8 @@ with mlflow.start_run(experiment_id=experiment_id,
         input_example=input_example
     )
 
+    # Guardar modelo localmente
+    workspace_dir = Path(__file__).parent.parent
     joblib.dump(model, workspace_dir / "model.pkl")
     joblib.dump(le, workspace_dir / "label_encoder.pkl")
 
@@ -213,3 +209,4 @@ with mlflow.start_run(experiment_id=experiment_id,
 print("\n🎉 Pipeline completado exitosamente!")
 print(f"   Accuracy final: {accuracy*100:.2f}%")
 print(f"   F1 Score: {f1:.4f}")
+
