@@ -15,7 +15,7 @@ model:
 
 # MLflow
 mlflow:
-  experiment_name: "blood-cell-leukemia"
+  experiment_name: "blood-cell-leukemia-v2"
   run_name: "mobilenet_randomforest"
 
 # Entrenamiento
