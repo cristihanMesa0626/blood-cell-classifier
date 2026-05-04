@@ -1,0 +1,23 @@
+# Dataset
+dataset:
+  kaggle_id: "mehradaria/leukemia"
+  data_dir: "data"
+  img_size: 224
+  max_samples_per_class: 200  # limitamos para que sea rapido
+
+# Modelo
+model:
+  feature_extractor: "mobilenet_v2"
+  classifier: "random_forest"
+  n_estimators: 100
+  random_state: 42
+  test_size: 0.2
+
+# MLflow
+mlflow:
+  experiment_name: "blood-cell-leukemia"
+  run_name: "mobilenet_randomforest"
+
+# Entrenamiento
+training:
+  batch_size: 32

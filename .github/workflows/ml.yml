@@ -1,0 +1,55 @@
+name: ML Pipeline - Blood Cell Classifier
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ml_pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Instalar dependencias
+        run: make install
+
+      - name: 🔍 Lint
+        run: make lint
+
+      - name: ✅ Test de librerias
+        run: make test
+
+      - name: 🔑 Configurar Kaggle
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          mkdir -p ~/.kaggle
+          echo '{"username":"'"$KAGGLE_USERNAME"'","key":"'"$KAGGLE_KEY"'"}' > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+
+      - name: 🧪 Entrenar modelo
+        run: make train
+
+      - name: 📤 Subir modelo como artefacto
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modelo-leukemia
+          path: |
+            model.pkl
+            label_encoder.pkl
+
+      - name: 📊 Subir MLflow runs
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-runs
+          path: mlruns/
