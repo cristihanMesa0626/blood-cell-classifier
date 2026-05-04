@@ -1,4 +1,4 @@
-# 🔬 Blood Cell Leukemia Classifier
+# Blood Cell Leukemia Classifier
 
 Pipeline de Machine Learning para clasificación de células sanguíneas 
 en frotis de leucemia usando Transfer Learning con MobileNetV2.
