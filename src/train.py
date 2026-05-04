@@ -1,3 +1,4 @@
+
 import os
 import sys
 import yaml
@@ -27,7 +28,6 @@ with open(config_path, "r") as f:
 
 print("✅ Configuracion cargada")
 print(f"   Dataset: {config['dataset']['kaggle_id']}")
-print(f"   Modelo: {config['model']['classifier']}")
 
 # ============================================
 # 2. CONFIGURAR KAGGLE Y DESCARGAR DATASET
@@ -40,7 +40,7 @@ if kaggle_json_path.exists():
     os.environ["KAGGLE_KEY"] = kaggle_creds["key"]
     print("✅ Credenciales Kaggle configuradas")
 else:
-    print("⚠️  kaggle.json no encontrado, usando variables de entorno")
+    print("⚠️  kaggle.json no encontrado")
 
 print("\n📥 Descargando dataset de Kaggle...")
 dataset_path = kagglehub.dataset_download(config['dataset']['kaggle_id'])
@@ -52,7 +52,6 @@ print(f"✅ Dataset descargado en: {dataset_path}")
 print("\n🖼️  Cargando imagenes...")
 
 def extract_hog_features(img):
-    """Extrae features HOG de una imagen"""
     img_resized = resize(img, (128, 128), anti_aliasing=True)
     features, _ = hog(
         img_resized,
@@ -63,16 +62,15 @@ def extract_hog_features(img):
         channel_axis=-1
     )
     return features
+
 def load_images_from_folder(base_path, max_per_class):
     images = []
     labels = []
     base = Path(base_path)
     
-    # Buscar carpetas hoja con imágenes (evitar duplicados)
     class_dirs_dict = {}
     for item in sorted(base.rglob("*")):
         if item.is_dir() and any(item.iterdir()):
-            # Verificar que es una carpeta hoja (sin subcarpetas con imágenes)
             subdirs_with_images = [d for d in item.iterdir() if d.is_dir() and any(d.glob("*.jpg"))]
             if not subdirs_with_images:
                 img_files = list(item.glob("*.jpg")) + list(item.glob("*.png")) + list(item.glob("*.bmp"))
@@ -156,26 +154,34 @@ print(f"   F1 Score (macro):    {f1_macro:.4f}")
 print("\n📋 Reporte detallado:")
 print(classification_report(y_test, y_pred, target_names=le.classes_))
 
-
 # ============================================
 # 7. REGISTRAR EN MLFLOW
 # ============================================
 print("\n📝 Registrando en MLflow...")
 
-# Usar ruta relativa simple - compatible con Windows y Linux
-mlflow.set_tracking_uri("file:./mlruns")
+# Configurar MLflow con ruta absoluta construida correctamente
+cwd = os.getcwd()
+mlruns_path = os.path.join(cwd, "mlruns")
+os.makedirs(mlruns_path, exist_ok=True)
+
+# En Linux/GitHub Actions, asegurar que no haya 'C:' en la ruta
+tracking_uri = "file://" + mlruns_path.replace("\\", "/").replace("C:", "")
+print(f"   Tracking URI: {tracking_uri}")
+
+mlflow.set_tracking_uri(tracking_uri)
 
 experiment_name = config['mlflow']['experiment_name']
 try:
     experiment_id = mlflow.create_experiment(name=experiment_name)
+    print(f"   Experimento creado: {experiment_id}")
 except mlflow.exceptions.MlflowException:
     experiment = mlflow.get_experiment_by_name(experiment_name)
     experiment_id = experiment.experiment_id
-
-input_example = X_test[:3]
+    print(f"   Experimento existente: {experiment_id}")
 
 with mlflow.start_run(experiment_id=experiment_id,
                       run_name=config['mlflow']['run_name']) as run:
+    
     mlflow.log_param("model_type", config['model']['classifier'])
     mlflow.log_param("feature_extractor", "HOG")
     mlflow.log_param("n_estimators", config['model']['n_estimators'])
@@ -190,12 +196,10 @@ with mlflow.start_run(experiment_id=experiment_id,
     mlflow.log_metric("train_samples", X_train.shape[0])
     mlflow.log_metric("test_samples", X_test.shape[0])
 
-    signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
+    # Guardar modelo SIN signature ni input_example (evita el error)
     mlflow.sklearn.log_model(
         sk_model=model,
-        artifact_path="model",
-        signature=signature,
-        input_example=input_example
+        artifact_path="model"
     )
 
     # Guardar modelo localmente
@@ -209,4 +213,3 @@ with mlflow.start_run(experiment_id=experiment_id,
 print("\n🎉 Pipeline completado exitosamente!")
 print(f"   Accuracy final: {accuracy*100:.2f}%")
 print(f"   F1 Score: {f1:.4f}")
-
